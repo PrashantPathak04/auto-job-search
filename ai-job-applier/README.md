@@ -111,6 +111,96 @@ The API will be available at `http://localhost:8000`
 - `GET /applications` - View all submitted applications
 - `GET /health` - Health check endpoint
 
+## Pipeline Architecture
+
+The system follows a modular pipeline architecture:
+
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   Job Scraping  │ -> │  AI Resume       │ -> │  Auto Apply     │
+│   (Indeed,      │    │  Tailoring       │    │  (Selenium)     │
+│    Naukri,      │    │  (OpenAI/Ollama) │    │                 │
+│    LinkedIn)    │    │                  │    │                 │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+         │                       │                       │
+         v                       v                       v
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   Database      │    │   Notifications  │    │   Dashboard     │
+│   Tracking      │    │   (Email/SMS)    │    │   (React)       │
+│   (SQLite)      │    │                  │    │                 │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+```
+
+### Core Components
+
+1. **Job Scrapers** (`scraper/`)
+   - `indeed_scraper.py`: Scrapes Indeed.com
+   - `naukri_scraper.py`: Scrapes Naukri.com
+   - `linkedin_scraper.py`: LinkedIn scraper (requires API)
+
+2. **AI Resume Tailor** (`ai_tailor/`)
+   - Analyzes job descriptions
+   - Tailors resume content using AI
+   - Generates cover letters
+
+3. **Application Automation** (`automation/`)
+   - Selenium-based form filling
+   - Document uploads
+   - Application submission
+
+4. **Database Tracker** (`tracker/`)
+   - SQLite database for persistence
+   - Application status tracking
+   - Job history
+
+5. **Notification System** (`notifier/`)
+   - Email alerts for applications
+   - Daily summary reports
+   - Interview notifications
+
+6. **Pipeline Orchestrator** (`job_application_pipeline.py`)
+   - Coordinates all components
+   - Handles error recovery
+   - Manages application limits
+
+## Quick Start
+
+### Command Line Interface
+
+```bash
+# Apply to 5 Python Developer jobs
+python cli.py --keywords "Python Developer" --location "Remote" --max 5
+
+# Just scrape jobs without applying
+python cli.py --scrape-only --keywords "Data Scientist"
+
+# Check application status
+python cli.py --status
+```
+
+### Direct Python Script
+
+```python
+from job_application_pipeline import JobApplicationPipeline
+import asyncio
+
+pipeline = JobApplicationPipeline()
+asyncio.run(pipeline.run_pipeline(
+    keywords="Python Developer",
+    location="San Francisco",
+    max_applications=3
+))
+pipeline.cleanup()
+```
+
+### Run Demo
+
+```bash
+python demo.py
+```
+
+This will show how each component works without actually applying to jobs.
+
 ## Usage Examples
 
 ### 1. Scrape Jobs from Indeed

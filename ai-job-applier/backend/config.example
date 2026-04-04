@@ -1,0 +1,30 @@
+# User Configuration for AI Job Applier
+# Copy this to .env and fill in your details
+
+# Personal Information
+USER_FIRST_NAME=YourFirstName
+USER_LAST_NAME=YourLastName
+USER_EMAIL=your.email@example.com
+USER_PHONE=+1-555-0123
+
+# Resume Path (relative to backend directory)
+USER_RESUME_PATH=resume.pdf
+
+# AI Configuration
+OPENAI_API_KEY=your_openai_api_key_here
+
+# Email Notifications (Gmail)
+SMTP_SERVER=smtp.gmail.com
+SMTP_PORT=587
+SENDER_EMAIL=your_email@gmail.com
+SENDER_PASSWORD=your_app_password_here
+
+# Application Settings
+MAX_APPLICATIONS_PER_DAY=5
+HEADLESS_BROWSER=true
+AUTO_APPLY=true
+
+# Job Search Preferences
+DEFAULT_KEYWORDS=Python Developer
+DEFAULT_LOCATION=Remote
+PREFERRED_PLATFORMS=indeed,naukri,linkedin
