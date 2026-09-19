@@ -30,6 +30,8 @@ app.get('/jobs', async (req, res) => {
   }
 });
 
+const getUserDataDir = () => process.env.USER_DATA_DIR || path.join(os.homedir(), '.linkedin_playwright_profile');
+
 app.get('/apply', (req, res) => {
   res.json({ success: false, error: 'Use POST /apply with JSON body { jobs, userDetails }' });
 });
@@ -40,7 +42,8 @@ app.post('/apply', async (req, res) => {
   if (!Array.isArray(jobs) || jobs.length === 0) return res.status(400).json({ success: false, error: 'jobs array required' })
 
   try {
-    const results = await applyToJobs(jobs, userDetails || {});
+    const USER_DATA_DIR = getUserDataDir();
+    const results = await applyToJobs(jobs, userDetails || {}, USER_DATA_DIR);
     res.json({ success: true, results });
   } catch (err) {
     console.error(err);

@@ -1,33 +1,16 @@
 const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
+const browserPool = require('./browserPool');
 
 async function scrapeJobs(query = 'full stack developer', days = 1, userDataDir) {
   const headless = process.env.HEADLESS === '1' || process.env.HEADLESS === 'true';
   let context = null;
   let browser = null;
 
-  // Try persistent context first (uses profile dir). If the profile is locked
-  // by another running browser, fall back to launching a fresh browser and
-  // create a new context using saved storageState.json when available.
-  try {
-    context = await chromium.launchPersistentContext(userDataDir, { headless: headless, args: ['--no-sandbox'] });
-  } catch (err) {
-    const msg = (err && err.message) ? err.message.toLowerCase() : '';
-    if (msg.includes('profile is already in use') || msg.includes('opening in existing browser session')) {
-      // Fallback path
-      browser = await chromium.launch({ headless: headless, args: ['--no-sandbox'] });
-      const storageStatePath = path.join(userDataDir, 'storageState.json');
-      if (fs.existsSync(storageStatePath)) {
-        context = await browser.newContext({ storageState: storageStatePath });
-      } else {
-        context = await browser.newContext();
-      }
-    } else {
-      throw err;
-    }
-  }
-
+  // Use shared browserPool persistent context when available to reuse session
+  await browserPool.init(userDataDir, headless);
+  const context = browserPool.getContext();
   const page = await context.newPage();
 
   // Add LinkedIn Easy Apply filter so the search returns only jobs with the Easy Apply badge.
@@ -70,13 +53,21 @@ async function scrapeJobs(query = 'full stack developer', days = 1, userDataDir)
         if (loc) location = loc.innerText.trim();
       }
 
-      items.push({ title, company, location, url });
+      items.push({ title, company, location, url, easyApply: true });
     });
     return items.slice(0, 500);
   });
 
-  await context.close();
-  if (browser) await browser.close();
+  // Persist storage state so other modules (apply) can reuse the authenticated session
+  try {
+    const storageStatePath = path.join(userDataDir, 'storageState.json');
+    const state = await context.storageState();
+    fs.writeFileSync(storageStatePath, JSON.stringify(state));
+  } catch (e) {
+    // ignore failures saving state
+  }
+
+  // Do not close the shared context/browser here; browserPool manages lifecycle.
   return jobs;
 }
 

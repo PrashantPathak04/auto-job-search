@@ -42,7 +42,13 @@ export default function App() {
         const res = await fetch('http://localhost:4000/jobs')
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         const body = await res.json()
-        setJobs(body.jobs || [])
+        const returned = body.jobs || []
+        // Keep only jobs explicitly marked as Easy Apply (scraper also filters),
+        // and auto-select them for convenience.
+        const easyJobs = returned.filter(j => j && j.easyApply !== false)
+        setJobs(easyJobs)
+        const allIndices = new Set(easyJobs.map((_, i) => i))
+        setSelectedJobIds(allIndices)
       } catch (err) {
         setError(err.message)
       } finally {
